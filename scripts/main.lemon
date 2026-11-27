@@ -45,12 +45,6 @@ function void fn004a5c() // menu handler for special stage
 	objA0.position.x.u16 = 0xf0 + getScreenExtend()
 	objA0.position.y.u16 = 0x0140
 	DrawObject()
-	if (control.pad1.pressed & CONTROL_START)
-	{
-		global.demo_countdown = 0
-		levelselect.unlocked = 1
-		return
-	}
 	if (control.pad1.state == 0x71 && objA0.state == 0) // 0x71 is CONTROL_UP and all face buttons
 		objA0.state = 1
 	else if (objA0.state)
@@ -59,10 +53,17 @@ function void fn004a5c() // menu handler for special stage
 		{
 			if (Input.getControllerPrevious(0) != 0x71) && (control.pad1.pressed != CONTROL_UP && control.pad1.pressed != CONTROL_DOWN)
 				return
+			bluespheregame.menu_flags = 1 // set flag for next blue sphere value to not get reset
 			playSound(SFX_CLICK)
 			global.next_bluespheres += (control.pad1.state & CONTROL_UP) ? -1 : 1
 			global.next_bluespheres %= 8
 		}
+	}
+	if (control.pad1.pressed & CONTROL_START)
+	{
+		global.demo_countdown = 0
+		levelselect.unlocked = 1
+		return
 	}
 }
 
