@@ -51,20 +51,25 @@ function void fn004a5c() // menu handler for special stage
 	{
 		if (Input.getController(0) != Input.getControllerPrevious(0))
 		{
-			if (Input.getControllerPrevious(0) != 0x71) && (control.pad1.pressed != CONTROL_UP && control.pad1.pressed != CONTROL_DOWN)
-				return
-			bluespheregame.menu_flags = 1 // set flag for next blue sphere value to not get reset
-			playSound(SFX_CLICK)
-			global.next_bluespheres += (control.pad1.state & CONTROL_UP) ? -1 : 1
-			global.next_bluespheres %= 8
+			bool upABC = (Input.getController(0) == 0x71 && Input.getControllerPrevious(0) == 0x31)
+			if (Input.getController(0) == 0x71 && Input.getControllerPrevious(0) == 0x70)
+				control.pad1.pressed &= ~CONTROL_UP
+			if (upABC) || (control.pad1.pressed & (CONTROL_UP | CONTROL_DOWN))
+			{
+				bluespheregame.menu_flags = 1 // set flag for next blue sphere value to not get reset
+				playSound(SFX_CLICK)
+				global.next_bluespheres += (control.pad1.state & CONTROL_UP) ? -1 : 1
+				global.next_bluespheres %= 8
+			}
 		}
 	}
 	if (control.pad1.pressed & CONTROL_START)
 	{
 		global.demo_countdown = 0
 		levelselect.unlocked = 1
-		return
+		control.pad1 = 0
 	}
+	control.pad2 = 0
 }
 
 /* special stage results changes */
