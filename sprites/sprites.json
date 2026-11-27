@@ -1,0 +1,17 @@
+{
+	"title_screen_start": { "File": "sprites.bmp", "Rect": "175,39,1,1" }, // so it doesn't show the "START GAME"
+	"dec93_start":  { "File": "sprites.bmp", "Rect": "0,0,96,8" },
+	"dec93_0":  { "File": "sprites.bmp", "Rect": "96,0,8,8" },
+	"dec93_1":  { "File": "sprites.bmp", "Rect": "104,0,8,8" },
+	"dec93_2":  { "File": "sprites.bmp", "Rect": "112,0,8,8" },
+	"dec93_3":  { "File": "sprites.bmp", "Rect": "120,0,8,8" },
+	"dec93_4":  { "File": "sprites.bmp", "Rect": "128,0,8,8" },
+	"dec93_5":  { "File": "sprites.bmp", "Rect": "136,0,8,8" },
+	"dec93_6":  { "File": "sprites.bmp", "Rect": "144,0,8,8" },
+	"dec93_7":  { "File": "sprites.bmp", "Rect": "152,0,8,8" },
+	"dec93_8":  { "File": "sprites.bmp", "Rect": "160,0,8,8" },
+	"dec93_9":  { "File": "sprites.bmp", "Rect": "168,0,8,8" },
+	"dec93_cool":  { "File": "sprites.bmp", "Rect": "0,8,80,16", "Center": "40,-24" },
+	"dec93_youmadeit":  { "File": "sprites.bmp", "Rect": "0,24,168,16", "Center": "84,-24" },
+	"dec93_gameover":  { "File": "sprites.bmp", "Rect": "0,40,136,16", "Center": "68,-24" },
+}

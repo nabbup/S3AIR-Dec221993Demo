@@ -1,0 +1,164 @@
+function u32 Game.getSetting(u32 settingId)
+{
+	if (settingId == SETTING_TITLE_SCREEN)
+		return 0
+	else return base.Game.getSetting(settingId)
+}
+
+// bring all entry points to the title screen (for obvious reasons)
+function void EntryFunctions.sharedInit()
+{
+	base.EntryFunctions.sharedInit()
+	global.game_mode = 0
+	System.setupCallFrame("GameModeControlLoop", "@EntryPoint")
+}
+
+// except the main menu
+function void EntryFunctions.mainMenuBG()
+{
+	Game.setUnderwaterAudioEffect(0)
+	System.setupCallFrame("MainMenuBG.Run")
+}
+
+/* title screen changes */
+
+//# address-hook(0x003e32) end(0x004342)
+function void TitleScreen()
+{
+	levelselect.unlocked = 0
+	if (!bluespheregame.menu_flags)
+		global.next_bluespheres = 3
+	base.TitleScreen()
+	if (global.rolling_demo)
+	{
+		global.game_mode = levelselect.unlocked ? 0x34 : 0
+		global.rolling_demo = 0
+		global.sk_bluespheres = 0
+		zeroMemory(0xffffffb2, 7) // Clear emerald collection states
+		u8[0xffffef70] = global.next_bluespheres | 0x80 // prevents the game from loading another special stage if you fail or win
+	}
+}
+
+//# address-hook(0x004a5c) end(0x004a82)
+function void fn004a5c() // menu handler for special stage
+{
+	objA0.position.x.u16 = 0xf0 + getScreenExtend()
+	objA0.position.y.u16 = 0x0140
+	DrawObject()
+	if (control.pad1.pressed & CONTROL_START)
+	{
+		global.demo_countdown = 0
+		levelselect.unlocked = 1
+		return
+	}
+	if (control.pad1.state == 0x71 && objA0.state == 0) // 0x71 is CONTROL_UP and all face buttons
+		objA0.state = 1
+	else if (objA0.state)
+	{
+		if (Input.getController(0) != Input.getControllerPrevious(0))
+		{
+			if (Input.getControllerPrevious(0) != 0x71) && (control.pad1.pressed != CONTROL_UP && control.pad1.pressed != CONTROL_DOWN)
+				return
+			playSound(SFX_CLICK)
+			global.next_bluespheres += (control.pad1.state & CONTROL_UP) ? -1 : 1
+			global.next_bluespheres %= 8
+		}
+	}
+}
+
+/* special stage results changes */
+
+//# address-hook(0x02eaa6) end(0x02eac6)
+function void fn02eaa6() // emeralds
+{
+	UnloadObject()
+}
+
+//# address-hook(0x02ea7c) end(0x02eaa4)
+function void fn02ea7c() // always unload continue text
+{
+	UnloadObject()
+}
+
+//# address-hook(0x02e4d6) end(0x02e50e)
+function void fn02e4d6() // always skip continue award
+{
+	objA0.base_state += 2
+	fn02e512()
+}
+
+//# address-hook(0x02e512) end(0x02e5be)
+function void fn02e512() // go back to title screen
+{
+	if (objA0.countdown_value > 1)
+	{
+		--objA0.countdown_value
+		return
+	}
+	if !(control.pad1.pressed & CONTROL_START)
+		return
+	objA0.countdown_value = 0
+	base.fn02e512()
+	bluespheregame.menu_flags = 1 // set flag for next blue sphere value to not get reset
+	global.game_mode = 0
+}
+
+/*
+// debugging feature
+//# address-hook(0x009e88) end(0x009e9e)
+function void BlueSpheres.OnBlueSphereCollected()
+{
+	bluespheres.blue_remaining = 1
+	bluespheres.rings_remaining = 0
+	bluespheres.rings_flags |= 0x01
+	bluespheres.rings_collected = 50
+	base.BlueSpheres.OnBlueSphereCollected()
+}
+*/
+
+// rendering!!!!! woot woot
+function bool Standalone.onWriteToSpriteTable(s16 px, s16 py, u16 renderQueue)
+{
+	// menu selection stuff
+	if (objA0.update_address == 0x004a5c)
+	{
+		Renderer.drawSprite("dec93_start", px, py, 0x30, SPRITE_FLAG_PRIO, 0xff00)
+		if (objA0.state == 1)
+			Renderer.drawSprite(stringformat("dec93_%d", global.next_bluespheres), px+0x68, py, 0x30, SPRITE_FLAG_PRIO, 0xff00)
+		return true
+	}
+	// Blue Spheres results texts
+	if ((global.game_mode & 0x7f) == 0x48 || (global.game_mode & 0x7f) == 0)
+	{
+		if (objA0.update_address == 0x02eac8) // "SPECIAL STAGE" gets replaced by "GAME OVER"
+		{
+			Renderer.drawSprite("dec93_gameover", px, py, 0x30, SPRITE_FLAG_PRIO, renderQueue)
+			return true
+		}
+		if (objA0.update_address == 0x02ea50) // "COOL! YOU DID IT!"
+		{
+			if (objA0.animation.sprite == 0x23)
+			{
+				Renderer.drawSprite("dec93_cool", px, py, 0x30, SPRITE_FLAG_PRIO, renderQueue)
+				return true
+			}
+			if (objA0.animation.sprite == 0x24)
+			{
+				Renderer.drawSprite("dec93_youmadeit", px, py, 0x30, SPRITE_FLAG_PRIO, renderQueue)
+				return true
+			}
+		}
+		if (objA0.update_address == 0x02ea50 || objA0.update_address == 0x02ec1e) && (objA0.animation.sprite >= 0x12 && objA0.animation.sprite <= 0x16)
+			return true
+		if ((global.game_mode & 0x7f) == 0)
+		{
+			// evil and fucked up but i don't want to have the ROM graphics show up when fading back to the title screen
+			u8 gameback = global.game_mode
+			global.game_mode = 0x48
+			base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+			global.game_mode = gameback
+			return true
+		}
+	}
+	return base.Standalone.onWriteToSpriteTable(px, py, renderQueue)
+}
